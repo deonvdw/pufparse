@@ -1,0 +1,168 @@
+##
+## PUF file format
+##
+## All multibyte values are litte-endian unless otherwise noted
+##
+## PUF Header
+##  00-2F   File identifier "Paradox File: Paradox Update File (PUF Format)\r\n"
+##  30      PUF file format version
+##  31 - 33 *** Unknown values - part of dword for PUF file version?
+##  34 - 43 *** Unknown values
+##  44      Hardware version(?) (hex)
+##  45      Hardware revision (hex)
+##  46      Product ID (hex)
+##  47      Family ID (hex)
+##  48      Group ID (hex)
+##  49      Version-number major - Single hex digit (least significant nibble)
+##  4A      Version-number minor - value displayed as hex e.g version .12 is hex 12
+##  4B      Version-number point - value displayed as integer
+##  4C      Minimum-version major
+##  4D      Minimum-version minor
+##  4E      Minimum-version point
+##  4F      Maximum-version major
+##  50      Maximum-version minor
+##  51      Maximum-version point
+##
+## PUF Header for version 2
+##  52 - 55 *** Unknown values
+##  56 - 59 *** Unknown values
+##  5A      PHE Product ID (hex)
+##  5B      PHE Family ID (hex)
+##  5C - 5F *** Unknown values
+##
+## PUF Header for versions 4 and 5
+##  52       Minimum DLL-version major?
+##  53       Minimum DLL-version minor?
+##  54       Minimum DLL-version point?
+##  55 - 5C  *** Unknown values
+##  5D - 60  Offset to Device Count Record
+##  61 - 62  PUF file header length / offset to Product Names EX header?
+##  63 - 64  *** Unknown values - part of offset to Product Names EX header
+##  65 - 69  *** Unknown values
+##  6A       PHE Product ID (hex)
+##  6B       PHE Family ID (hex)
+##  6C       PHE Hardware version??? (hex)
+##  6D       PHE Hardware revision (hex)
+##  6E - xx  *** Unknown values. Header length at offset 61
+
+## Device Count Record -- follows PUF file header
+##  00      Number of devices records (chips/chip-ranges) for this file
+##  01 - xx <N Device Info records>
+
+## Device Info record -- follows Device Count record.
+##  00      *** Unknown values  ... Device Info record number?
+##  01      Device Info record length
+##  02      *** Unknown values  ... [Physical device number??]
+##  03      Device ID for this record
+##  04      Number of partitions / firmare parts in this devices
+##  05 - xx <N Partition Info records>
+
+## Partition info records
+##  00      Partition number for this device?
+##  01      Part type/format
+##  02 - 04 Partition firmware version
+##  05 - 08 *** Unknown values
+##  09 - 0C Image data length
+##  0D - 10 Image starting address
+##  11 - 14 Image ending address
+
+## Product Names Ex (only present for version 4, 5, followed by Product Names header) - pointed to by word at offset 61-62 in PUF header
+##  00      Header size
+##  01 - xx <Header size> unknown bytes... looks like version tuples
+##  xx+1    <Product Names header>
+##
+## Product Names header: (At offset 52 for version 1, at offset 60 for v2, follows Product Names Ex for version 4, 5)
+##  00 - 02 Something version [datafile version?]
+##  03 - 05 Minimum DLL version? [version number format]
+##  06      Product ID
+##  07      ProductNameStr [ending in 0d 0a]
+##          ProductDescStr [ending in 0d 0a]
+##  xx      Family ID
+##  xx+1    FamilyNameStr [ending in 0d 0a]
+##  yy - yy+2   *** Unknown values
+##  yy+3        Group ID
+##  yy+4        GroupNameStr  [ending in 0d 0a]
+##  zz - zz+3   *** Unknown values
+##  zz+4        Number of devices [chip entries] in product?
+##  zz+5 - zz+7 *** Unknown values - high bytes for number of devices?
+
+## Device partition table header
+##  00      Device ID
+##  01      *** Unknown value
+##  02      File entry encryption type = A6=NONE, 3B=Original, 57=Extended [Does not control/indicate if data is actually encrypted!], 00 for non-processor files
+##  03      *** Unknown value - Data supplied flag??? 1= contains data 0= no data
+##  04      image Device ID
+##  05      image Family ID
+##  06      image Product ID
+##  07      image Version-number major - Single hex digit (least significant nibble)
+##  08      image Version-number minor - value displayed as hex e.g version .12 is hex 12
+##  09      image Version-number point - value displayed as integer
+##  0A - 0D Applcation start address?
+##  0E - 11 Application end address?
+##  12 - 15 Structure base address?
+##  16 - 17 *** Unknown values
+##  18 -    <Device partition table entries>
+##
+## Device partition table entry
+##  00      Partition type (1=firmware/ROM 2=Data file, XX= something else???)
+##  01 -    Filename / use string  [ending in 0d 0a] (e.g. Firmware)
+##  xx - xx+3   Applcation start address?
+##  xx+4 - xx+7 Application end address?
+##  xx+8        No data supplied flag[?] If set to 1 o data bytes follow partition entry
+##  xx+9 - xx+C FileLength
+##  xx+D - xx+10  Unknown value - seems to be number of version sets for partition type 3
+##  xx+11         File data IF flag at xx+8 not set
+## 
+## Partition type 2 file -- must compute length from file data
+##  00 - 03 Unknown -- some count?
+##  04 - 07 Symbol set (code page) to use for text
+##  08 - 0B Unknown -- something count?
+##  If above three is not all zero (typical value of one in offset 0 and 8):
+##  0C      Language code
+##  0D - 10 Start address (to erase?)
+##  11 - 14 End address (to erase?)
+##  15 - 18 *** Unknown values
+##  19 - 1C *** Unknown values
+##  1D - 20 Number of data blocks
+##  21 - xx <Partition type 2 data blocks>
+##
+## Partition type 2 data block
+##  00 - 03 memory start address(?)
+##  04 - 07 number of data bytes in block
+##  08 - xx <number-of-bytes data to copy>
+##
+## Partition type 3 file -- must compute length from file data
+##  00 - 0B *** Unknown values
+##  0C - 10 Number of version groups
+##  11 - xx <N version group structures>
+##
+## Version group header
+##  00 - 02 FROM version number
+##  03 - 05 TO version number
+##  06 - 09 Number of data block records
+##  0A - xx <N data block records>
+##
+## Version data block record
+##  00 - 03 Unknown / Base address?
+##  04 - 07 Number of Initialisation records
+##  08 - xx <N Initialisation records>
+##
+## Initialisation value record
+##  00 - 03 Address
+##  04      Initialisation value
+##  05      Value bitmask (bit set = enable writing this bit from initialisation value)
+
+
+##### TM50 - num devices mismatch pufex header vs productnames header [productnames header correct , but no part info]
+##### evo192 v1 files - contains paritions per dev, but how/where is it defined?
+###
+###  Partition type 5:
+###   00 - 03	Language Set number
+###   04         Version Major??
+###   05         Version Minor??
+###   06         Unknown?
+###   07 - 0A    Langauge set size?
+###  
+###  Each language seems to use 1001F bytes. dp_unknownD might have the number of languages in set?
+###   
+###   
